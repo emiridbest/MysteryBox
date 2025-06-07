@@ -1,9 +1,5 @@
 "use client";
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { PhoneIcon, Smartphone, Zap, Tv, WalletIcon, CreditCard, Loader2 } from 'lucide-react';
-import Head from 'next/head';
 
 import { ToastContainer } from 'react-toastify';
 
