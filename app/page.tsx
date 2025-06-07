@@ -24,7 +24,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "../components/ui/dialog";
-import { B } from 'framer-motion/dist/types.d-DSjX-LJB';
+import { B, u } from 'framer-motion/dist/types.d-DSjX-LJB';
 import { Celo } from '@celo/rainbowkit-celo/chains';
 import { parse } from 'path';
 
@@ -49,7 +49,6 @@ const MysteryBox = () => {
     const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
     const [transactionSteps, setTransactionSteps] = useState<Step[]>([]);
     const [currentOperation, setCurrentOperation] = useState<'claim' | null>(null);
-    const { sendTransactionAsync, error } = useSendTransaction({ config });
     const [nextClaimTime, setNextClaimTime] = useState<Date | null>(null);
     const [canClaimToday, setCanClaimToday] = useState(true);
     const [canClaim, setCanClaim] = useState(true);
@@ -66,25 +65,64 @@ const MysteryBox = () => {
     } = useSwitchChain();
 
     useEffect(() => {
-        const checkLastClaim = () => {
-            const lastClaim = localStorage.getItem('lastFreeClaim');
-            const today = new Date().toDateString();
-
-            if (lastClaim === today) {
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                tomorrow.setHours(0, 0, 0, 0);
-                setNextClaimTime(tomorrow);
-                setCanClaim(false);
-                return false;
+        const checkLastClaim = async () => {
+            if (!address || !mysteryBoxContractAddress) return true;
+            
+            try {
+                // Check local storage first
+                const lastClaim = localStorage.getItem('lastFreeClaim');
+                const today = new Date().toDateString();
+                
+                if (lastClaim === today) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    tomorrow.setHours(0, 0, 0, 0);
+                    setNextClaimTime(tomorrow);
+                    setCanClaim(false);
+                    return false;
+                }
+                
+                const lastClaimTime = await readContract(config, {
+                    address: mysteryBoxContractAddress as `0x${string}`,
+                    abi: mysteryBoxABI,
+                    functionName: 'lastClaimTime',
+                    args: [address as `0x${string}`]
+                });
+                
+                if (lastClaimTime) {
+                    // Convert blockchain timestamp (seconds since epoch) to Date object
+                    const lastClaimDate = new Date(Number(lastClaimTime) * 1000);
+                    const currentDate = new Date();
+                    
+                    // Check if last claim was today
+                    if (
+                        lastClaimDate.getDate() === currentDate.getDate() &&
+                        lastClaimDate.getMonth() === currentDate.getMonth() &&
+                        lastClaimDate.getFullYear() === currentDate.getFullYear()
+                    ) {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        tomorrow.setHours(0, 0, 0, 0);
+                        setNextClaimTime(tomorrow);
+                        setCanClaim(false);
+                        return false;
+                    }
+                }
+                
+                setCanClaim(true);
+                return true;
+            } catch (err) {
+                console.error("Failed to check last claim time:", err);
+                // Default to allowing claim on error
+                setCanClaim(true);
+                return true;
             }
-            setCanClaim(true);
-            return true;
         };
 
-        const canClaimToday = checkLastClaim();
-        setCanClaimToday(canClaimToday);
-    }, []);
+        checkLastClaim().then(canClaimToday => {
+            setCanClaimToday(canClaimToday);
+        });
+    }, [address]);
 
     // Update time remaining countdown
     useEffect(() => {
@@ -176,7 +214,7 @@ const MysteryBox = () => {
 
             // Generate a random reward between 1% and 20% of faucet balance
             const minPercent = 1;
-            const maxPercent = 20;
+            const maxPercent = 10;
             const randomPercent = minPercent + Math.random() * (maxPercent - minPercent);
              const calculatedReward = (faucetBalance * randomPercent) / 100;
             setReward(calculatedReward);
@@ -233,10 +271,7 @@ const MysteryBox = () => {
                 dataSuffix: dataSuffix
             });
 
-            if (!tx) {
-                updateStepStatus('request-claim', 'error', 'Transaction not sent');
-                return;
-            }
+
             updateStepStatus('request-claim', 'success');
             updateStepStatus('confirm-transaction', 'loading');
 
@@ -248,17 +283,19 @@ const MysteryBox = () => {
                 });
             } catch (referralError) {
                 console.error("Referral submission error:", referralError);
+                updateStepStatus('confirm-transaction', 'error', referralError instanceof Error ? referralError.message : 'Unknown error');
+
             }
-            setShowShareSuccess(true); // Show share button after successful claim
+            updateStepStatus('confirm-transaction', 'success');
 
             setTimeout(() => {
                 closeTransactionDialog();
             }, 2000);
-            updateStepStatus('confirm-transaction', 'success');
 
             localStorage.setItem('lastFreeClaim', new Date().toDateString());
             setCanClaimToday(false);
             setCanClaim(false);
+            setShowShareSuccess(true); // Show share button after successful claim
 
             // Set next claim time
             const tomorrow = new Date();
@@ -268,6 +305,8 @@ const MysteryBox = () => {
 
         } catch (error) {
             console.error('Claim error:', error);
+             updateStepStatus('request-claim', 'error', 'Transaction not sent');
+            toast.error('Transaction failed. Please try again later.');
             // Find the current loading step and mark it as error
             const loadingStepIndex = transactionSteps.findIndex(step => step.status === 'loading');
             if (loadingStepIndex !== -1) {
@@ -277,6 +316,7 @@ const MysteryBox = () => {
                     error instanceof Error ? error.message : 'Unknown error'
                 );
             }
+
         } finally {
             setIsProcessing(false);
         }
@@ -290,15 +330,7 @@ const MysteryBox = () => {
         setShowReward(false);
         setIsClaimable(false);
         setReward(0);
-        // Find the current loading step and mark it as error
-        const loadingStepIndex = transactionSteps.findIndex(step => step.status === 'loading');
-        if (loadingStepIndex !== -1) {
-            updateStepStatus(
-                transactionSteps[loadingStepIndex].id,
-                'error',
-                error instanceof Error ? error.message : 'Unknown error'
-            );
-        }
+       
     };
 
     const getDialogTitle = () => {
@@ -427,12 +459,7 @@ const MysteryBox = () => {
                                         <Sparkles className="text-yellow-300 animate-pulse" />
                                     </div>
 
-                                    {showShareSuccess && (
-                                        <div className="mt-4 animate-bounce">
-                                            <div className="text-sm text-white mb-1">Share your win!</div>
-                                            <ShareOnFarcasterButton amount={Number(formatUnits(reward).toString())} />
-                                        </div>
-                                    )}
+
                                 </div>
 
                             ) : !canClaim ? (
@@ -491,7 +518,8 @@ const MysteryBox = () => {
                             <div className="w-96 h-96 border-8 border-t-yellow-400 border-r-pink-400 border-b-purple-400 border-l-blue-400 rounded-full animate-spin" />
                         </div>
                     )}
-                </div>                {/* Action Buttons */}
+                </div>      
+                          {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 items-center">
                     {showReward && !showShareSuccess && (
                         <button
@@ -502,7 +530,7 @@ const MysteryBox = () => {
                             {isProcessing ? '🔄 CLAIMING...' : '🚀 CLAIM REWARD 🚀'}
                         </button>
                     )}
-                    {showReward && (
+                    {showReward && !showShareSuccess && (
                         <button
                             onClick={resetBox}
                             className="bg-gradient-to-r from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 text-white font-bold py-4 px-8 rounded-full shadow-2xl transform hover:scale-110 transition-all duration-300 text-xl border-4 border-white/50 animate-pulse"
@@ -513,9 +541,9 @@ const MysteryBox = () => {
                     {/* Show "Share on Farcaster" button after successful claim outside the box */}
                     {showShareSuccess && (
                         <div className="flex flex-col items-center bg-white/20 backdrop-blur-lg rounded-xl p-6 border-2 border-white/30">
-                            <h3 className="text-xl font-bold text-white mb-4">🎉 Successfully Claimed {reward} celoUSD! 🎉</h3>
+                            <h3 className="text-xl font-bold text-white mb-4">🎉 Successfully Claimed {reward.toFixed(2)} celoUSD! 🎉</h3>
                             <p className="text-white mb-4">Share your win with friends and invite them to try their luck!</p>
-                            <ShareOnFarcasterButton amount={reward} />
+                            <ShareOnFarcasterButton amount={reward}  />
                             <button
                                 onClick={() => {
                                     setShowReward(false);

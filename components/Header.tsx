@@ -38,7 +38,6 @@ export default function Header() {
   const [usdtBalance, setUsdtBalance] = useState<number>(0);
   const [celoBalance, setCeloBalance] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [isFarcasterContext, setIsFarcasterContext] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -58,29 +57,6 @@ export default function Header() {
 
   const chainId = useChainId();
 
-  // Check if running in Farcaster context
-  useEffect(() => {
-    const checkFarcasterContext = () => {
-      // Check for Farcaster-specific properties
-      const isFarcaster = !!(
-        window.farcaster || 
-        window.parent !== window || 
-        document.referrer.includes('warpcast') ||
-        window.location.href.includes('farcaster') ||
-        navigator.userAgent.includes('Farcaster')
-      );
-      
-      setIsFarcasterContext(isFarcaster);
-      
-      if (!isFarcaster) {
-        console.warn('This app is designed to run only within Farcaster');
-        // Optionally show a message to the user
-        toast.warning('This app is designed for Farcaster. Some features may not work properly.');
-      }
-    };
-
-    checkFarcasterContext();
-  }, []);
 
   // Contract read hooks
   const cusdResult = useReadContract({
@@ -174,7 +150,6 @@ export default function Header() {
     cusdResult.data,
     usdcResult.data,
     usdtResult.data,
-    isFarcasterContext
   ]);
 
   // Click outside handler for dropdown
@@ -287,6 +262,10 @@ export default function Header() {
             ) : (
               <Button
                 className="rounded-full bg-purple-900 font-medium"
+                onClick={() => {
+                  const connector = connectors.find((c) => c.id === "miniAppConnector") || connectors[1];
+                  connect({ connector, chainId: celoChainId });
+                }}
               >
                 Connect Wallet
               </Button>

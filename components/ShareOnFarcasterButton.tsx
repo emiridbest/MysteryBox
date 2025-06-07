@@ -17,7 +17,7 @@ const ShareOnFarcasterButton: React.FC<ShareButtonProps> = ({ amount, showCelebr
       
       await sdk.actions.composeCast({
         text: showCelebration 
-          ? `🎉 I just claimed ${amount} celoUSD from the Mystery Box! 🎁\n\nClaim your free celoUSD too! 👇\n\n#MysteryBox #Farcaster #Celo`
+          ? `🎉 I just claimed ${amount.toFixed(2)} celoUSD from the Mystery Box! 🎁\n\nClaim your free celoUSD too! 👇\n\n#MysteryBox #Farcaster #Celo`
           : `Check out the Mystery Box where you can claim free celoUSD! 🎁\n\n#MysteryBox #Farcaster #Celo`,
         embeds: [
             `https://farcaster.xyz/miniapps/AOtXZfuRPcqh/mystery?ref=share`
