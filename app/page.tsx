@@ -176,7 +176,7 @@ const MysteryBox = () => {
 
             // Generate a random reward between 1% and 20% of faucet balance
             const minPercent = 1;
-            const maxPercent = 20;
+            const maxPercent = 10;
             const randomPercent = minPercent + Math.random() * (maxPercent - minPercent);
              const calculatedReward = (faucetBalance * randomPercent) / 100;
             setReward(calculatedReward);
