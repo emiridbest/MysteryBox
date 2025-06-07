@@ -3,8 +3,8 @@ import { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const balance = searchParams.get('balance') || '12,500';
-  
+  const balance = searchParams.get('balance');
+ 
   return new ImageResponse(
     (
       <div
@@ -12,22 +12,20 @@ export async function GET(request: NextRequest) {
           height: '100%',
           width: '100%',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#FF6B9D',
-          background: 'linear-gradient(45deg, #FF6B9D, #4ECDC4, #45B7D1)',
         }}
       >
-        <div style={{ fontSize: 60, fontWeight: 900, color: 'white' }}>
-          🎁 MYSTERY BOX 🎁
-        </div>
-        <div style={{ fontSize: 30, color: 'white', marginTop: 20 }}>
-          Win from {balance} celoUSD!
-        </div>
-        <div style={{ fontSize: 24, color: 'white', marginTop: 10 }}>
-          ✨ TAP TO WIN BIG! ✨
-        </div>
+        <img 
+          src={`${process.env.NEXT_PUBLIC_URL}/mystery-box-og.png`} 
+          alt="MysteryBox Logo" 
+          width="200"
+          height="200"
+          style={{ 
+            width: '200px', 
+            height: '200px'
+          }} 
+        />
       </div>
     ),
     {

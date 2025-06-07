@@ -6,10 +6,10 @@
     },
     "frame": {
         "version": "next",
-        "name": "Esusu",
-        "iconUrl": "https://celomysterybox.vercel.app/mystery-box-og.svg",
+        "name": "Mystery",
+        "iconUrl": "https://celomysterybox.vercel.app/mystery-box-og.png",
         "homeUrl": "https://celomysterybox.vercel.app",
-        "splashImageUrl": "https://celomysterybox.vercel.app/mystery-box-og.svg",
+        "splashImageUrl": "https://celomysterybox.vercel.app/mystery-box-og.png",
         "splashBackgroundColor": "#f5f0ec",
         "webhookUrl": "https://celomysterybox.vercel.app/api/farcaster/webhook",
         "subtitle": "Win cUSD daily",

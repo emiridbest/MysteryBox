@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useContext, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -39,14 +39,19 @@ import { stableTokenABI } from "@celo/abis";
 import { toast } from "sonner";
 
 export default function Header() {
+  // Token addresses
   const USDC_ADDRESS = "0xcebA9300f2b948710d2653dD7B07f33A8B32118C";
   const CUSD_ADDRESS = "0x765DE816845861e75A25fCA122bb6898B8B1282a";
   const USDT_ADDRESS = "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e";
-  const [usdcBalance, setUsdcBalance] = useState<Number>(0);
-  const [cusdBalance, setCusdBalance] = useState<Number>(0);
-  const [usdtBalance, setUsdtBalance] = useState<Number>(0);
-  const [celoBalance, setCeloBalance] = useState<Number>(0);
+  
+  // State
+  const [usdcBalance, setUsdcBalance] = useState<number>(0);
+  const [cusdBalance, setCusdBalance] = useState<number>(0);
+  const [usdtBalance, setUsdtBalance] = useState<number>(0);
+  const [celoBalance, setCeloBalance] = useState<number>(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isFarcasterContext, setIsFarcasterContext] = useState(false);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -65,16 +70,37 @@ export default function Header() {
 
   const chainId = useChainId();
 
-  const handleSwitchChain = useCallback(() => {
-    switchChain({ chainId: celoChainId });
-  }, [switchChain, celoChainId]);
+  // Check if running in Farcaster context
+  useEffect(() => {
+    const checkFarcasterContext = () => {
+      // Check for Farcaster-specific properties
+      const isFarcaster = !!(
+        window.farcaster || 
+        window.parent !== window || 
+        document.referrer.includes('warpcast') ||
+        window.location.href.includes('farcaster') ||
+        navigator.userAgent.includes('Farcaster')
+      );
+      
+      setIsFarcasterContext(isFarcaster);
+      
+      if (!isFarcaster) {
+        console.warn('This app is designed to run only within Farcaster');
+        // Optionally show a message to the user
+        toast.warning('This app is designed for Farcaster. Some features may not work properly.');
+      }
+    };
 
-  // Move hooks to the component level so they're called unconditionally
+    checkFarcasterContext();
+  }, []);
+
+  // Contract read hooks
   const cusdResult = useReadContract({
     abi: stableTokenABI,
     address: CUSD_ADDRESS,
     functionName: "balanceOf",
     args: [address ?? "0x"],
+    query: { enabled: !!address && isConnected }
   });
 
   const usdcResult = useReadContract({
@@ -82,6 +108,7 @@ export default function Header() {
     address: USDC_ADDRESS,
     functionName: "balanceOf",
     args: [address ?? "0x"],
+    query: { enabled: !!address && isConnected }
   });
 
   const usdtResult = useReadContract({
@@ -89,37 +116,73 @@ export default function Header() {
     address: USDT_ADDRESS,
     functionName: "balanceOf",
     args: [address ?? "0x"],
+    query: { enabled: !!address && isConnected }
   });
 
+  // Handle Farcaster-specific connection
+  const handleFarcasterConnect = async () => {
+    try {
+      if (!isFarcasterContext) {
+        toast.error('Connection only available in Farcaster');
+        return;
+      }
+
+      // Look for Farcaster-specific connector first
+      const farcasterConnector = connectors.find((c) => 
+        c.id === "miniAppConnector" || 
+        c.name?.toLowerCase().includes('farcaster') ||
+        c.id === "farcaster"
+      );
+      
+      const connector = farcasterConnector || connectors[0];
+      
+      if (!connector) {
+        toast.error('No suitable wallet connector found');
+        return;
+      }
+
+      toast.info("Connecting to wallet...");
+      
+      // Ensure we're on Celo network
+      if (chainId !== celoChainId) {
+        await switchChain({ chainId: celoChainId });
+      }
+      
+      await connect({ 
+        connector, 
+        chainId: celoChainId 
+      });
+      
+      toast.success("Connected successfully!");
+    } catch (error) {
+      console.error("Connection error:", error);
+      toast.error("Failed to connect wallet");
+    }
+  };
+
+  // Auto-connect and network switching for Farcaster
   useEffect(() => {
-    const switchToCelo = async () => {
-      if (!isConnected || isConnected && chainId !== celoChainId) {
+    const handleAutoConnect = async () => {
+      if (!isFarcasterContext) return;
+      
+      if (isConnected && chainId !== celoChainId) {
         try {
           toast.info("Switching to Celo network...");
-          handleSwitchChain();
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          if (chainId == celoChainId) {
-            const connector = connectors.find((c) => c.id === "miniAppConnector") || connectors[0];
-            connect({
-              connector,
-              chainId: celoChainId,
-            });
-            toast.success("Connected to Celo network successfully!");
-          } else {
-            throw new Error("Failed to switch to Celo network");
-          }
+          await switchChain({ chainId: celoChainId });
+          toast.success("Switched to Celo network");
         } catch (error) {
-          console.error("Connection error:", error);
+          console.error("Network switch error:", error);
+          toast.error("Failed to switch to Celo network");
         }
       }
     };
 
-    switchToCelo();
-  }, [connect, connectors, chainId, celoChainId, handleSwitchChain, isConnected]);
+    handleAutoConnect();
+  }, [isConnected, chainId, celoChainId, switchChain, isFarcasterContext]);
 
-
+  // Fetch balances
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && isFarcasterContext) {
       const fetchCeloBalance = async () => {
         try {
           const balance = await publicClient.getBalance({ address });
@@ -129,7 +192,7 @@ export default function Header() {
         }
       };
 
-      // Update balances from hook results
+      // Update token balances from hook results
       if (cusdResult.data) {
         setCusdBalance(Number(cusdResult.data));
       }
@@ -141,6 +204,7 @@ export default function Header() {
       if (usdtResult.data) {
         setUsdtBalance(Number(usdtResult.data));
       }
+      
       fetchCeloBalance();
     }
   }, [
@@ -149,9 +213,11 @@ export default function Header() {
     publicClient,
     cusdResult.data,
     usdcResult.data,
-    usdtResult.data
+    usdtResult.data,
+    isFarcasterContext
   ]);
 
+  // Click outside handler for dropdown
   const handleClickOutside = (event: MouseEvent) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
       setIsOpen(false);
@@ -170,175 +236,119 @@ export default function Header() {
     };
   }, [isOpen]);
 
-
-
-
-  // Function to format address for display
+  // Format address for display
   const formatAddress = (addr: string | undefined) => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  if (isConnected) {
+  // Format balance for display
+  const formatBalance = (balance: number, decimals: number = 18) => {
+    return (balance / Math.pow(10, decimals)).toFixed(4);
+  };
+
+  // Show non-Farcaster warning if not in proper context
+  if (!isFarcasterContext) {
     return (
-      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 dark:bg-black/80 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-red-50/90 border-b border-red-200 shadow-sm">
         <div className="container mx-auto px-4">
-          <div className="h-16 flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center">
-              <Image
-                className="cursor-pointer transition-all duration-300 hover:scale-105"
-                src="/esusu.png"
-                width="120"
-                height="120"
-                alt="EsusuLogo"
-                onClick={() => router.push('/')}
-              />
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1">
-              <NavigationMenu>
-
-              </NavigationMenu>
-            </div>
-
-            {/* Connected User Section */}
-            <div className="flex items-center space-x-4">
-              {isConnected ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="rounded-full px-4 border-gray-200 hover:border-primary/80 flex items-center gap-2 bg-white dark:bg-gray-800 shadow-sm"
-                    >
-                      <div className="h-6 w-6 rounded-full bg-gradient-to-r from-primary to-primary/60 flex items-center justify-center">
-                        <span className="text-white text-xs">
-                          {address ? address.substring(2, 4).toUpperCase() : ''}
-                        </span>
-                      </div>
-                      <span className="font-medium text-sm">{formatAddress(address as string)}</span>
-                      <ChevronDownIcon className="h-4 w-4 opacity-70" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 glass-card" align="end">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem
-                        className="cursor-pointer flex items-center justify-between hover:bg-primary/10 hover:text-primary"
-                        onClick={() => disconnect()}
-                      >
-                        <span>Disconnect</span>
-                        <XMarkIcon className="h-4 w-4" />
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button
-                  className="cursor-pointer flex items-center justify-between hover:bg-primary/10 hover:text-primary"
-                  onClick={() => {
-                    const connector = connectors.find((c) => c.id === "miniAppConnector") || connectors[0];
-                    connect({ connector, chainId: celoChainId });
-                  }}
-                >
-                  Connect
-                </Button>
-              )}
-
-              {/* Mobile menu */}
-              <div className="md:hidden">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button size="icon" variant="ghost" className="text-black/80 dark:text-primary hover:bg-primary/10">
-                      <Bars3Icon className="color-black/50 h-5 w-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="glass-card w-[80%]">
-                    <div className="flex flex-col space-y-4 mt-8 dark:text-gray-500">
-                      {/* Connected Status for Mobile */}
-                      <div className="flex items-center space-x-3 py-3 px-4 mb-2 bg-primary/10 rounded-lg">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-primary/60 flex items-center justify-center">
-                          <span className="text-white">
-                            {address ? address.substring(2, 4).toUpperCase() : ''}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Connected Wallet
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatAddress(address as string)}
-                          </p>
-                          <div className="space-y-1">
-                            <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                              {`CELO: ${celoBalance ? (Number(celoBalance) / 1e18).toFixed(4) : '0.0000'}`}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                              {`CUSD: ${cusdBalance ? (Number(cusdBalance) / 1e18).toFixed(4) : '0.0000'}`}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                              {`USDC: ${usdcBalance ? (Number(usdcBalance) / 1e18).toFixed(4) : '0.0000'}`}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                              {`USDT: ${usdtBalance ? (Number(usdtBalance) / 1e18).toFixed(4) : '0.0000'}`}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Link
-                        href="/"
-                        className={cn(
-                          "py-2 px-4 rounded-lg transition-all duration-300",
-                          pathname === "/"
-                            ? "text-black/90 dark:bg-primary/10 dark:text-primary border-l-2 border-primary"
-                            : "hover:bg-primary/10 hover:text-primary"
-                        )}
-                      >
-                        Home
-                      </Link>
-
-                      {/* Rest of mobile menu remains the same */}
-
-
-                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h3 className="px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                          About Us
-                        </h3>
-                        <div className="mt-2 pl-4">
-                         
-                        </div>
-                      </div>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
+          <div className="h-16 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-red-700 font-medium">⚠️ Farcaster Context Required</p>
+              <p className="text-red-600 text-sm">This app is designed to work only within Farcaster</p>
             </div>
           </div>
         </div>
       </header>
     );
   }
-
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 dark:bg-black/80 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 border-b border-purple-200  shadow-sm">
       <div className="container mx-auto px-4">
         <div className="h-16 flex items-center justify-between">
           {/* Logo */}
+          <div className="flex items-center">
+           
+            <span className="ml-2 font-bold text-lg text-purple-600 font-serif" style={{ fontFamily: "'Playfair Display', serif" }}>Mystery Box</span>
+          </div>
 
-
-          {/* Desktop Navigation */}
-
-          <Button
-            className="hidden md:flex rounded-full bg-primary hover:bg-primary/90 font-medium shadow-md"
-            onClick={() => {
-              const connector = connectors.find((c) => c.id === "miniAppConnector") || connectors[0];
-              connect({ connector, chainId: celoChainId });
-            }}
-          >
-            Connect
-          </Button>
-
+          {/* Connection Status & Controls */}
+          <div className="flex items-center space-x-4">
+            {isConnected ? (
+              <>
+               
+                {/* Mobile View */}
+                <div className="md:hidden">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <Bars3Icon className="h-5 w-5 text-purple-700" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-[300px]">
+                      <div className="flex flex-col space-y-4 mt-8">
+                        {/* Wallet Info */}
+                        <div className="bg-purple-800 rounded-lg p-4">
+                          <div className="flex items-center space-x-3 mb-3">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-white/70 to-purple-600 flex items-center justify-center">
+                              <span className="text-white font-medium">
+                                {address ? address.substring(2, 4).toUpperCase() : ''}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{formatAddress(address)}</p>
+                              <p className="text-xs text-purple-500">Connected</p>
+                            </div>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>CELO:</span>
+                              <span className="font-medium">{formatBalance(celoBalance)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>CUSD:</span>
+                              <span className="font-medium">{formatBalance(cusdBalance)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Navigation */}
+                        <Link
+                          href="/"
+                          className={cn(
+                            "py-3 px-4 rounded-lg transition-all duration-300 text-center",
+                            pathname === "/"
+                              ? "bg-purple text-white"
+                              : "hover:bg-purple-100 bg-purple-800"
+                          )}
+                        >
+                          Home
+                        </Link>
+                        
+                        {/* Disconnect Button */}
+                        <Button
+                          variant="outline"
+                          className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => disconnect()}
+                        >
+                          <XMarkIcon className="h-4 w-4 mr-2" />
+                          Disconnect
+                        </Button>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+              </>
+            ) : (
+              <Button
+                className="rounded-full bg-purple-900 font-medium "
+                onClick={handleFarcasterConnect}
+                disabled={!isFarcasterContext}
+              >
+                Connect Wallet
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </header>
@@ -347,7 +357,6 @@ export default function Header() {
 
 declare global {
   interface Window {
-    ethereum: any;
-    farcaster: any;
+    farcaster?: any;
   }
 }

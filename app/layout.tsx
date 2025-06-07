@@ -4,6 +4,7 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { ThemeProvider } from "../components/ThemeProvider";
 import "./globals.css";
+import "../styles/animations.css";
 import { Metadata } from "next";
 import { Toaster } from "../components/ui/sonner";
 
@@ -50,16 +51,10 @@ export default async function RootLayout({
       <body>
         <ThemeProvider>
           <Providers session={session}>
-              <div className="min-h-screen bg-gradient-radial from-white via-gray-50 to-gray-100 dark:from-black dark:via-black dark:to-black">
                 <Header />
-                <main className="py-6 px-4 sm:px-6 lg:px-8">
-                  <div className="max-w-7xl mx-auto">
                     {children}
-                  </div>
-                </main>
-                <Toaster />
+                        <Toaster />
                 <Footer />
-              </div>
           </Providers>
         </ThemeProvider>
       </body>

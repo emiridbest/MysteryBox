@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // This is a simplified webhook handler
-// In a real application, you would validate the signature and store data in a database
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();

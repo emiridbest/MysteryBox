@@ -39,11 +39,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         className="fixed right-4 top-20 z-50 p-2 rounded-full backdrop-blur-sm bg-white/30 dark:bg-black/30 border border-gray-200 dark:border-gray-800 shadow-lg hover:scale-110 transition-all"
         aria-label="Toggle theme"
       >
-        {darkMode ? (
-          <Sun className="h-5 w-5 text-yellow-400" />
-        ) : (
-          <Moon className="h-5 w-5 text-gray-700" />
-        )}
+       
       </button>
     </ThemeContext.Provider>
   );
