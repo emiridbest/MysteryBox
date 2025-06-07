@@ -9,10 +9,7 @@
     "lint": "next lint",
     "test": "jest --config jest.config.js",
     "test:watch": "jest --watch --config jest.config.js",
-    "analyze": "ANALYZE=true next build",
-    "compile": "hardhat compile",
-    "deploy:alfajores": "hardhat run scripts/deploy-mystery-box.ts --network alfajores",
-    "deploy:celo": "hardhat run scripts/deploy-mystery-box.ts --network celo"
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@celo/abis": "^12.0.3",
@@ -83,7 +80,6 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.54.2",
     "react-markdown": "^9.0.3",
-    "react-native-web": "^0.20.0",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^7.5.1",
     "react-toastify": "^10.0.5",
@@ -97,8 +93,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@nomiclabs/hardhat-ethers": "^3.0.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/node": "^20.17.32",
     "@types/react": "^19",
@@ -106,7 +100,6 @@
     "autoprefixer": "^10.4.14",
     "eslint": "^8.40.0",
     "eslint-config-next": "^15.0.0",
-    "hardhat": "^2.25.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.23",
