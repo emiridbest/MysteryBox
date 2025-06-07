@@ -4,7 +4,6 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { ThemeProvider } from "../components/ThemeProvider";
 import "./globals.css";
-import "../styles/animations.css";
 import { Metadata } from "next";
 import { Toaster } from "../components/ui/sonner";
 

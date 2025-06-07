@@ -16,5 +16,5 @@ const nextConfig = {
 module.exports = {
   reactStrictMode: true,
   pageExtensions: ['tsx', 'ts'],
-  allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev', 'https://esusu-farcaster.vercel.app', 'https://concentrations-sister-childhood-bi.trycloudflare.com']
+  allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev', 'https://celomysterybox.vercel.app', 'https://val-mortgage-michael-successfully.trycloudflare.com/_next/webpack-hmr']
 };
