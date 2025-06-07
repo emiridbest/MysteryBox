@@ -258,21 +258,6 @@ export default function Header() {
     return (balance / Math.pow(10, decimals)).toFixed(4);
   };
 
-  // Show non-Farcaster warning if not in proper context
-  if (!isFarcasterContext) {
-    return (
-      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-red-50/90 border-b border-red-200 shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="h-16 flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-red-700 font-medium">⚠️ Farcaster Context Required</p>
-              <p className="text-red-600 text-sm">This app is designed to work only within Farcaster</p>
-            </div>
-          </div>
-        </div>
-      </header>
-    );
-  }
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 border-b border-purple-200  shadow-sm">
       <div className="container mx-auto px-4">
