@@ -10,31 +10,35 @@ import { Toaster } from "../components/ui/sonner";
 
 const appUrl = process.env.NEXT_PUBLIC_URL
 export const metadata: Metadata = {
-  title: {
-    default: 'Mystery Box DApp',
-    template: '%s | Mystery Box DApp',
-  },
-  description: 'Win random celoUSD tokens with our Mystery Box DApp!',
+  title: 'Mystery Box ',
+  description: 'Open to receive a surprise gift! 🎁',
+  metadataBase: new URL(appUrl),
   openGraph: {
+    images: ['/api/og/data'],
+    title: 'Mystery Box',
+    description: 'Open to receive a surprise gift! 🎁',
     type: 'website',
-    locale: 'en_US',
-    url: 'https://celomysterybox.vercel.com',
-    siteName: 'Mystery Box DApp',
-    images: [
-      {
-        url: '/mystery-box-og.svg',
-        width: 1200,
-        height: 630,
-        alt: 'Mystery Box DApp',
-      },
-    ],
   },
-  twitter: {
-    card: 'summary_large_image',
-    site: '@yourtwitterhandle',
-    creator: '@yourtwitterhandle',
-  },
-};
+  // Add Farcaster frame meta tag for mini app embedding
+  other: {
+    'fc:frame': JSON.stringify({
+      version: "next",
+      imageUrl: `${appUrl}/api/og/data`,
+      button: {
+        title: "🎁 Mystery Box",
+        action: {
+          type: "launch_frame",
+          name: "Mystery Box",
+          url: appUrl,
+          // Configure the native Farcaster splash screen
+          splashImageUrl: `${appUrl}/mystery-box-og.svg`,
+          splashBackgroundColor: "#f5f0ec",
+          webhookUrl: `${appUrl}/api/farcaster/webhook`,
+        }
+      }
+    })
+  }
+}
 export default async function RootLayout({
   children,
 }: Readonly<{
