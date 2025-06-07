@@ -18,20 +18,8 @@ import {
   XMarkIcon
 } from "@heroicons/react/24/outline";
 import { cn } from "../lib/utils";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle
-} from "../components/ui/navigation-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuGroup,
-  DropdownMenuTrigger
-} from "../components/ui/dropdown-menu";
+
+
 import { Button } from "../components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import { config } from "./providers/WagmiProvider";
@@ -119,46 +107,7 @@ export default function Header() {
     query: { enabled: !!address && isConnected }
   });
 
-  // Handle Farcaster-specific connection
-  const handleFarcasterConnect = async () => {
-    try {
-      if (!isFarcasterContext) {
-        toast.error('Connection only available in Farcaster');
-        return;
-      }
-
-      // Look for Farcaster-specific connector first
-      const farcasterConnector = connectors.find((c) => 
-        c.id === "miniAppConnector" || 
-        c.name?.toLowerCase().includes('farcaster') ||
-        c.id === "farcaster"
-      );
-      
-      const connector = farcasterConnector || connectors[0];
-      
-      if (!connector) {
-        toast.error('No suitable wallet connector found');
-        return;
-      }
-
-      toast.info("Connecting to wallet...");
-      
-      // Ensure we're on Celo network
-      if (chainId !== celoChainId) {
-        await switchChain({ chainId: celoChainId });
-      }
-      
-      await connect({ 
-        connector, 
-        chainId: celoChainId 
-      });
-      
-      toast.success("Connected successfully!");
-    } catch (error) {
-      console.error("Connection error:", error);
-      toast.error("Failed to connect wallet");
-    }
-  };
+ 
 
   const handleSwitchChain = useCallback(() => {
     switchChain({ chainId: celoChainId });
@@ -193,7 +142,7 @@ export default function Header() {
 
   // Fetch balances
   useEffect(() => {
-    if (isConnected && address && isFarcasterContext) {
+    if (isConnected && address ) {
       const fetchCeloBalance = async () => {
         try {
           const balance = await publicClient.getBalance({ address });
@@ -337,9 +286,7 @@ export default function Header() {
               </>
             ) : (
               <Button
-                className="rounded-full bg-purple-900 font-medium "
-                onClick={handleFarcasterConnect}
-                disabled={!isFarcasterContext}
+                className="rounded-full bg-purple-900 font-medium"
               >
                 Connect Wallet
               </Button>
@@ -351,8 +298,10 @@ export default function Header() {
   );
 }
 
+
 declare global {
   interface Window {
-    farcaster?: any;
+    ethereum: any;
+    farcaster: any;
   }
 }
