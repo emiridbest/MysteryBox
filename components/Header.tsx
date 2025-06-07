@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -160,25 +160,36 @@ export default function Header() {
     }
   };
 
+  const handleSwitchChain = useCallback(() => {
+    switchChain({ chainId: celoChainId });
+  }, [switchChain, celoChainId]);
   // Auto-connect and network switching for Farcaster
   useEffect(() => {
-    const handleAutoConnect = async () => {
-      if (!isFarcasterContext) return;
-      
-      if (isConnected && chainId !== celoChainId) {
+    const switchToCelo = async () => {
+      if (!isConnected || isConnected && chainId !== celoChainId) {
         try {
           toast.info("Switching to Celo network...");
-          await switchChain({ chainId: celoChainId });
-          toast.success("Switched to Celo network");
+          handleSwitchChain();
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          if (chainId == celoChainId) {
+            const connector = connectors.find((c) => c.id === "miniAppConnector") || connectors[0];
+            connect({
+              connector,
+              chainId: celoChainId,
+            });
+            toast.success("Connected to Celo network successfully!");
+          } else {
+            throw new Error("Failed to switch to Celo network");
+          }
         } catch (error) {
-          console.error("Network switch error:", error);
-          toast.error("Failed to switch to Celo network");
+          console.error("Connection error:", error);
         }
       }
     };
 
-    handleAutoConnect();
-  }, [isConnected, chainId, celoChainId, switchChain, isFarcasterContext]);
+    switchToCelo();
+  }, [connect, connectors, chainId, celoChainId, handleSwitchChain, isConnected]);
+
 
   // Fetch balances
   useEffect(() => {

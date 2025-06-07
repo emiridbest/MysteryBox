@@ -3,9 +3,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Gift, Sparkles, Star, Heart, Diamond, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ethers, Interface } from 'ethers';
+import { ethers, formatUnits, Interface, parseUnits } from 'ethers';
 import { useAccount, useSendTransaction, useSwitchChain, useChainId } from 'wagmi';
-import { readContract } from '@wagmi/core';
+import { readContract, writeContract } from '@wagmi/core';
 import { parseEther } from 'viem';
 import { config } from '../components/providers/WagmiProvider';
 import { Button } from '../components/ui/button';
@@ -24,6 +24,9 @@ import {
     DialogTitle,
     DialogDescription,
 } from "../components/ui/dialog";
+import { B } from 'framer-motion/dist/types.d-DSjX-LJB';
+import { Celo } from '@celo/rainbowkit-celo/chains';
+import { parse } from 'path';
 
 // Divvi Integration 
 const dataSuffix = getDataSuffix({
@@ -46,13 +49,14 @@ const MysteryBox = () => {
     const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
     const [transactionSteps, setTransactionSteps] = useState<Step[]>([]);
     const [currentOperation, setCurrentOperation] = useState<'claim' | null>(null);
-    const { sendTransactionAsync, error } = useSendTransaction();
+    const { sendTransactionAsync, error } = useSendTransaction({ config });
     const [nextClaimTime, setNextClaimTime] = useState<Date | null>(null);
     const [canClaimToday, setCanClaimToday] = useState(true);
     const [canClaim, setCanClaim] = useState(true);
     const [timeRemaining, setTimeRemaining] = useState('');
     const searchParams = useSearchParams();
     const isFromShare = searchParams.get('ref') === 'share';
+    const chainId = useChainId();
 
     const {
         switchChain,
@@ -119,7 +123,7 @@ const MysteryBox = () => {
                     args: []
                 });
 
-                setFaucetBalance(parseFloat(balance.toString()));
+                setFaucetBalance(Number(formatUnits(balance.toString())));
             } catch (err) {
                 console.error("Failed to fetch faucet balance:", err);
                 toast.error("Failed to fetch faucet balance");
@@ -170,14 +174,12 @@ const MysteryBox = () => {
             setIsSpinning(false);
             setShowReward(true);
 
-            // Generate a random reward between 1% and 10% of faucet balance
+            // Generate a random reward between 1% and 20% of faucet balance
             const minPercent = 1;
-            const maxPercent = 10;
+            const maxPercent = 20;
             const randomPercent = minPercent + Math.random() * (maxPercent - minPercent);
-            const calculatedReward = (faucetBalance * randomPercent) / 100;
-            const formattedReward = parseFloat(calculatedReward.toFixed(2));
-
-            setReward(formattedReward);
+             const calculatedReward = (faucetBalance * randomPercent) / 100;
+            setReward(calculatedReward);
             setIsClaimable(true);
         }, 3000);
     };
@@ -187,24 +189,24 @@ const MysteryBox = () => {
 
         setIsProcessing(true);
         openTransactionDialog('claim');
-
-        try {
-            // Step 1: Check chain
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Step 1: Check chain
+        updateStepStatus('check-chain', 'loading');
+        if (chainId !== celoChainId || chain?.id !== celoChainId) {
             updateStepStatus('check-chain', 'loading');
-            if (chain?.id !== celoChainId) {
-                updateStepStatus('check-chain', 'loading');
-                if (isSwitchChainPending) {
-                    toast.info('Switching to Celo network...');
-                }
-                if (isSwitchChainError) {
-                    updateStepStatus('check-chain', 'error', `Failed to switch chain: ${switchChainError?.message || 'Unknown error'}`);
-                    return;
-                }
-                handleSwitchChain();
-                toast.success('Successfully switched to the Celo network.');
-                await new Promise(resolve => setTimeout(resolve, 3000));
+            if (isSwitchChainPending) {
+                toast.info('Switching to Celo network...');
             }
-            updateStepStatus('check-chain', 'success');
+            if (isSwitchChainError) {
+                updateStepStatus('check-chain', 'error', `Failed to switch chain: ${switchChainError?.message || 'Unknown error'}`);
+                return;
+            }
+            await handleSwitchChain();
+            toast.success('Successfully switched to the Celo network.');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        updateStepStatus('check-chain', 'success');
+        try {
 
             // Step 2: Verify faucet balance
             updateStepStatus('verify-faucet-balance', 'loading');
@@ -212,38 +214,48 @@ const MysteryBox = () => {
                 updateStepStatus('verify-faucet-balance', 'error', `Reward exceeds 20% of faucet balance: ${reward} > ${0.2 * faucetBalance}`);
                 return;
             }
+            await new Promise(resolve => setTimeout(resolve, 1000));
             updateStepStatus('verify-faucet-balance', 'success');
+            const claim = parseEther(reward.toString());
 
             // Step 3: Request claim
             updateStepStatus('request-claim', 'loading');
-            const claimData = new Interface(mysteryBoxABI).encodeFunctionData('claim', [parseEther(reward.toString())]);
-            const dataWithSuffix = dataSuffix + claimData;
-            updateStepStatus('request-claim', 'success');
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Step 4: Confirm transaction
-            const tx = await sendTransactionAsync({
-                to: mysteryBoxContractAddress as `0x${string}`,
-                data: dataWithSuffix,
-                value: parseEther(reward.toString()),
+            const tx = await writeContract(config, {
+                abi: mysteryBoxABI,
+                address: mysteryBoxContractAddress as `0x${string}`,
+                functionName: 'claim',
+                args: [claim],
+                account: address as `0x${string}`,
+                dataSuffix: dataSuffix
             });
+
+            if (!tx) {
+                updateStepStatus('request-claim', 'error', 'Transaction not sent');
+                return;
+            }
+            updateStepStatus('request-claim', 'success');
             updateStepStatus('confirm-transaction', 'loading');
 
             // Submit the referral to Divvi
             try {
                 await submitReferral({
                     txHash: tx as unknown as `0x${string}`,
-                    chainId: celoChainId
+                    chainId: Celo.id
                 });
             } catch (referralError) {
                 console.error("Referral submission error:", referralError);
             }
-            updateStepStatus('confirm-transaction', 'success');            // Success actions
             setShowShareSuccess(true); // Show share button after successful claim
-            
+
             setTimeout(() => {
                 closeTransactionDialog();
             }, 2000);
-            
+            updateStepStatus('confirm-transaction', 'success');
+
             localStorage.setItem('lastFreeClaim', new Date().toDateString());
             setCanClaimToday(false);
             setCanClaim(false);
@@ -384,7 +396,7 @@ const MysteryBox = () => {
                         <Diamond className="text-blue-400 animate-spin" />
                         <Sparkles className="text-green-400 animate-bounce" />
                     </div>
-                    
+
                     {/* Welcome message for users who came from a shared link */}
                     {isFromShare && (
                         <div className="mt-6 animate-bounce">
@@ -407,21 +419,22 @@ const MysteryBox = () => {
                             {showReward ? (
                                 <div className="flex flex-col items-center justify-center h-full text-white animate-bounce">
                                     <div className="text-1xl font-bold mb-2">🎉 CONGRATULATIONS! 🎉</div>
-                                    <div className="text-6xl font-black mb-2 drop-shadow-lg">{reward}</div>
-                                    <div className="text-2xl font-bold">celoUSD</div>  
-                                                                      <div className="flex space-x-2 mt-4">
+                                    <div className="text-6xl font-black mb-2 drop-shadow-lg"> *.**</div>
+                                    <div className="text-2xl font-bold">cUSD</div>
+                                    <div className="flex space-x-2 mt-4">
                                         <Sparkles className="text-yellow-300 animate-pulse" />
                                         <Star className="text-white animate-spin" />
                                         <Sparkles className="text-yellow-300 animate-pulse" />
                                     </div>
-                                    
+
                                     {showShareSuccess && (
                                         <div className="mt-4 animate-bounce">
                                             <div className="text-sm text-white mb-1">Share your win!</div>
-                                            <ShareOnFarcasterButton amount={reward} />
+                                            <ShareOnFarcasterButton amount={Number(formatUnits(reward).toString())} />
                                         </div>
                                     )}
                                 </div>
+
                             ) : !canClaim ? (
                                 <div className="flex flex-col items-center justify-center h-full">
                                     <div className="bg-gradient-to-br from-yellow-100 to-yellow-200   rounded-lg border border-yellow-300  p-4">
@@ -489,7 +502,14 @@ const MysteryBox = () => {
                             {isProcessing ? '🔄 CLAIMING...' : '🚀 CLAIM REWARD 🚀'}
                         </button>
                     )}
-                    
+                    {showReward && (
+                        <button
+                            onClick={resetBox}
+                            className="bg-gradient-to-r from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 text-white font-bold py-4 px-8 rounded-full shadow-2xl transform hover:scale-110 transition-all duration-300 text-xl border-4 border-white/50 animate-pulse"
+                        >
+                            TRY AGAIN
+                        </button>
+                    )}
                     {/* Show "Share on Farcaster" button after successful claim outside the box */}
                     {showShareSuccess && (
                         <div className="flex flex-col items-center bg-white/20 backdrop-blur-lg rounded-xl p-6 border-2 border-white/30">
@@ -521,7 +541,7 @@ const MysteryBox = () => {
                         </p>
                         <div className="mt-6 flex justify-center items-center space-x-4">
                             <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 rounded-full">
-                                <span className="text-white font-bold">💰 Faucet Balance: {faucetBalance.toLocaleString()} celoUSD</span>
+                                <span className="text-white font-bold">💰 Faucet Balance: {faucetBalance} CeloUSD</span>
                             </div>
                         </div>
                     </div>
@@ -550,11 +570,11 @@ const MysteryBox = () => {
             {/* Multi-step Transaction Dialog */}
             <Dialog open={isTransactionDialogOpen} onOpenChange={(open) => !isWaitingTx && !open && closeTransactionDialog()}>
                 <DialogContent className="sm:max-w-md border rounded-lg">
-                    <DialogHeader>
-                        <DialogTitle className='text-black/90 '>{getDialogTitle()}</DialogTitle>
+                    <DialogHeader className='bg-white/90 backdrop-blur-lg rounded-t-lg p-6'>
+                        <DialogTitle className='text-black/90'>{getDialogTitle()}</DialogTitle>
                         <DialogDescription>
                             {currentOperation === 'claim' ?
-                                `Claiming your reward of ${reward} CUSD...` :
+                                `Claiming your reward of *.** CUSD...` :
                                 'Processing transaction...'}
                         </DialogDescription>
                     </DialogHeader>
