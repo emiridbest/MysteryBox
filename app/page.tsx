@@ -388,7 +388,7 @@ const MysteryBox = () => {
                     {/* Welcome message for users who came from a shared link */}
                     {isFromShare && (
                         <div className="mt-6 animate-bounce">
-                            <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 px-6 py-3 rounded-full shadow-lg inline-flex items-center gap-2">
+                            <div className="bg-gradient-to-r from-purple-400 to-purple-600 px-6 py-3 rounded-full shadow-lg inline-flex items-center gap-2">
                                 <Sparkles className="text-white" />
                                 <span className="text-white font-bold">You were invited! Claim your own celoUSD reward!</span>
                             </div>
@@ -408,7 +408,8 @@ const MysteryBox = () => {
                                 <div className="flex flex-col items-center justify-center h-full text-white animate-bounce">
                                     <div className="text-1xl font-bold mb-2">🎉 CONGRATULATIONS! 🎉</div>
                                     <div className="text-6xl font-black mb-2 drop-shadow-lg">{reward}</div>
-                                    <div className="text-2xl font-bold">celoUSD</div>                                    <div className="flex space-x-2 mt-4">
+                                    <div className="text-2xl font-bold">celoUSD</div>  
+                                                                      <div className="flex space-x-2 mt-4">
                                         <Sparkles className="text-yellow-300 animate-pulse" />
                                         <Star className="text-white animate-spin" />
                                         <Sparkles className="text-yellow-300 animate-pulse" />

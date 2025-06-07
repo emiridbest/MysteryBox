@@ -11,7 +11,6 @@ interface ShareButtonProps {
 }
 
 const ShareOnFarcasterButton: React.FC<ShareButtonProps> = ({ amount, showCelebration = true }) => {
-  const appUrl = process.env.NEXT_PUBLIC_URL;
   
   const handleShare = async () => {
     try {
@@ -21,7 +20,7 @@ const ShareOnFarcasterButton: React.FC<ShareButtonProps> = ({ amount, showCelebr
           ? `🎉 I just claimed ${amount} celoUSD from the Mystery Box! 🎁\n\nClaim your free celoUSD too! 👇\n\n#MysteryBox #Farcaster #Celo`
           : `Check out the Mystery Box where you can claim free celoUSD! 🎁\n\n#MysteryBox #Farcaster #Celo`,
         embeds: [
-            `${appUrl}/mystery-box?ref=share`
+            `https://farcaster.xyz/miniapps/AOtXZfuRPcqh/mystery?ref=share`
         ]
       });
 

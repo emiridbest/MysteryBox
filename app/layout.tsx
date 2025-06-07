@@ -30,7 +30,6 @@ export const metadata: Metadata = {
           type: "launch_frame",
           name: "Mystery Box",
           url: appUrl,
-          // Configure the native Farcaster splash screen
           splashImageUrl: `${appUrl}/mystery-box-og.svg`,
           splashBackgroundColor: "#f5f0ec",
           webhookUrl: `${appUrl}/api/farcaster/webhook`,

@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
         <img 
           src={`${process.env.NEXT_PUBLIC_URL}/mystery-box-og.png`} 
           alt="MysteryBox Logo" 
-          width="200"
-          height="200"
+          width="1200"
+          height="630"
           style={{ 
-            width: '200px', 
-            height: '200px'
+            width: '1200px', 
+            height: '630px'
           }} 
         />
       </div>
