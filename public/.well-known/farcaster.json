@@ -1,0 +1,43 @@
+{
+    "accountAssociation": {
+        "header": "eyJmaWQiOjg0OTM2MywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEVjM2IyM0U0NTQwNzY2RWVkMmI0MDZGRTk4MTg3YzhBN0U3MjViQmMifQ",
+        "payload": "eyJkb21haW4iOiJlc3VzdS1mYXJjYXN0ZXIudmVyY2VsLmFwcCJ9",
+        "signature": "MHgzNjQwNDMwMWQ0NGI1NDNjNzM2NzFhMzE1NmU2MmFmZDA0YmZiNDVmZDY5ZjVhMmI4YThiNWMyNGIwZmI0YzFiNDA2NzVmZDI0MjI3MTM4NDIzZjNkNTFlNjUzNDQ4NTAwNjA3ZWExZWJkMDEwOTZjNWVmNjZiYzI1MjI4NTk2NDFj"
+    },
+    "frame": {
+        "version": "next",
+        "name": "Esusu",
+        "iconUrl": "https://celomysterybox.vercel.app/esusu.png",
+        "homeUrl": "https://celomysterybox.vercel.app",
+        "splashImageUrl": "https://celomysterybox.vercel.app/esusu.png",
+        "splashBackgroundColor": "#f5f0ec",
+        "webhookUrl": "https://celomysterybox.vercel.app/api/farcaster/webhook",
+        "subtitle": "Win cUSD daily by opening the mystery box",
+        "description": "Win cUSD daily by opening the mystery box on Celo blockchain",
+        "primaryCategory": "finance",
+        "tags": [
+            "crypto",
+            "claims",
+            "stablecoin",
+            "win",
+            "lottery"
+        ],
+        "heroImageUrl": "https://celomysterybox.vercel.app/api/og/data",
+        "tagline": "Open the mystery box and win cUSD daily",
+        "shortDescription": "Open the mystery box and win cUSD daily",
+        "ogTitle": "Esusu - Mobile Data Bundles",
+        "ogDescription": "Buy mobile data with crypto for Nigeria, Ghana, and more African countries",
+        "ogImageUrl": "https://celomysterybox.vercel.app/api/og/data",
+        "requiredChains": [
+            "eip155:42220"
+        ],
+        "requiredCapabilities": [
+            "wallet.getEthereumProvider",
+            "actions.composeCast",
+            "actions.addMiniApp",
+            "actions.openUrl",
+            "actions.close",
+            "actions.ready"
+        ]
+    }
+}
