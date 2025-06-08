@@ -531,7 +531,7 @@ const MysteryBox = () => {
                     {/* Show "Share on Farcaster" button after successful claim outside the box */}
                     {showShareSuccess && (
                         <div className="flex flex-col items-center bg-white/20 backdrop-blur-lg rounded-xl p-6 border-2 border-white/30">
-                            <h3 className="text-xl font-bold text-white mb-4">🎉 Successfully Claimed {reward.toFixed(2)} cUSD! 🎉</h3>
+                            <h3 className="text-xl font-bold text-white mb-4">🎉 Successfully Claimed {reward.toFixed(3)} cUSD! 🎉</h3>
                             <p className="text-white mb-4">Share your win with friends and invite them to try their luck!</p>
                             <ShareOnFarcasterButton amount={reward} />
                             <button
