@@ -557,11 +557,7 @@ const MysteryBox = () => {
                             Open the magical mystery box to win amazing cUSD tokens!
                             You could win anywhere between <span className="font-bold text-yellow-300">1%</span> and <span className="font-bold text-green-300">20%</span> of the faucet balance.
                         </p>
-                        <div className="mt-6 flex justify-center items-center space-x-4">
-                            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 rounded-full">
-                                <span className="text-white font-bold">💰 Faucet Balance: *.** CeloUSD</span>
-                            </div>
-                        </div>
+                       
                     </div>
                 </div>
 
