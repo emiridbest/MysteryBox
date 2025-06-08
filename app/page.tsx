@@ -52,6 +52,7 @@ const MysteryBox = () => {
     const [nextClaimTime, setNextClaimTime] = useState<Date | null>(null);
     const [canClaimToday, setCanClaimToday] = useState(true);
     const [canClaim, setCanClaim] = useState(true);
+    const [lastClaimTime, setLastClaimTime] = useState<Date | null>(null);
     const [timeRemaining, setTimeRemaining] = useState('');
     const searchParams = useSearchParams();
     const isFromShare = searchParams.get('ref') === 'share';
@@ -64,69 +65,65 @@ const MysteryBox = () => {
         isPending: isSwitchChainPending,
     } = useSwitchChain();
 
-    useEffect(() => {
-        const checkLastClaim = async () => {
-            if (!address || !mysteryBoxContractAddress) return true;
-            
-            try {
-                // Check local storage first
-                const lastClaim = localStorage.getItem('lastFreeClaim');
-                const today = new Date().toDateString();
+   useEffect(() => {
+    const checkLastClaim = async () => {
+        if (!address || !mysteryBoxContractAddress) {
+            // Allow claiming if no address or contract
+            setCanClaim(true);
+            setCanClaimToday(true);
+            return true;
+        }
+
+        try {
+            const lastClaimTime = await readContract(config, {
+                address: mysteryBoxContractAddress as `0x${string}`,
+                abi: mysteryBoxABI,
+                functionName: 'lastClaimTime',
+                args: [address as `0x${string}`]
+            });
+
+            if (lastClaimTime && Number(lastClaimTime) > 0) {
+                // Convert blockchain timestamp (seconds since epoch) to Date object
+                const lastClaimDate = new Date(Number(lastClaimTime) * 1000);
+                setLastClaimTime(lastClaimDate);
+
+                // Calculate next claim time (24 hours from last claim)
+                const nextClaimDate = new Date(lastClaimDate.getTime() + 86400 * 1000);
+                setNextClaimTime(nextClaimDate);
+
+                // Check if user can claim now
+                const now = new Date();
+                const canClaimNow = now.getTime() >= nextClaimDate.getTime();
                 
-                if (lastClaim === today) {
-                    const tomorrow = new Date();
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    tomorrow.setHours(0, 0, 0, 0);
-                    setNextClaimTime(tomorrow);
-                    setCanClaim(false);
-                    return false;
-                }
+                setCanClaim(canClaimNow);
+                setCanClaimToday(canClaimNow);
                 
-                const lastClaimTime = await readContract(config, {
-                    address: mysteryBoxContractAddress as `0x${string}`,
-                    abi: mysteryBoxABI,
-                    functionName: 'lastClaimTime',
-                    args: [address as `0x${string}`]
-                });
-                
-                if (lastClaimTime) {
-                    // Convert blockchain timestamp (seconds since epoch) to Date object
-                    const lastClaimDate = new Date(Number(lastClaimTime) * 1000);
-                    const currentDate = new Date();
-                    
-                    // Check if last claim was today
-                    if (
-                        lastClaimDate.getDate() === currentDate.getDate() &&
-                        lastClaimDate.getMonth() === currentDate.getMonth() &&
-                        lastClaimDate.getFullYear() === currentDate.getFullYear()
-                    ) {
-                        const tomorrow = new Date();
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        tomorrow.setHours(0, 0, 0, 0);
-                        setNextClaimTime(tomorrow);
-                        setCanClaim(false);
-                        return false;
-                    }
-                }
-                
+                return canClaimNow;
+            } else {
+                // No previous claim found, allow claiming
                 setCanClaim(true);
-                return true;
-            } catch (err) {
-                console.error("Failed to check last claim time:", err);
-                // Default to allowing claim on error
-                setCanClaim(true);
+                setCanClaimToday(true);
+                setLastClaimTime(null);
+                setNextClaimTime(null);
                 return true;
             }
-        };
+        } catch (err) {
+            console.error("Failed to check last claim time:", err);
+            // Default to allowing claim on error
+            setCanClaim(true);
+            setCanClaimToday(true);
+            setLastClaimTime(null);
+            setNextClaimTime(null);
+            return true;
+        }
+    };
 
-        checkLastClaim().then(canClaimToday => {
-            setCanClaimToday(canClaimToday);
-        });
-    }, [address]);
+    checkLastClaim();
+}, [address, mysteryBoxContractAddress]); // Add mysteryBoxContractAddress to dependencies
 
     // Update time remaining countdown
     useEffect(() => {
-        if (!canClaim && nextClaimTime) {
+        if (!canClaim && nextClaimTime ) {
             const interval = setInterval(() => {
                 const now = new Date();
                 const diff = nextClaimTime.getTime() - now.getTime();
@@ -216,7 +213,7 @@ const MysteryBox = () => {
             const minPercent = 1;
             const maxPercent = 10;
             const randomPercent = minPercent + Math.random() * (maxPercent - minPercent);
-             const calculatedReward = (faucetBalance * randomPercent) / 100;
+            const calculatedReward = (faucetBalance * randomPercent) / 100;
             setReward(calculatedReward);
             setIsClaimable(true);
         }, 3000);
@@ -292,20 +289,13 @@ const MysteryBox = () => {
                 closeTransactionDialog();
             }, 2000);
 
-            localStorage.setItem('lastFreeClaim', new Date().toDateString());
             setCanClaimToday(false);
             setCanClaim(false);
             setShowShareSuccess(true); // Show share button after successful claim
 
-            // Set next claim time
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
-            setNextClaimTime(tomorrow);
-
         } catch (error) {
             console.error('Claim error:', error);
-             updateStepStatus('request-claim', 'error', 'Transaction not sent');
+            updateStepStatus('request-claim', 'error', 'Transaction not sent');
             toast.error('Transaction failed. Please try again later.');
             // Find the current loading step and mark it as error
             const loadingStepIndex = transactionSteps.findIndex(step => step.status === 'loading');
@@ -330,7 +320,7 @@ const MysteryBox = () => {
         setShowReward(false);
         setIsClaimable(false);
         setReward(0);
-       
+
     };
 
     const getDialogTitle = () => {
@@ -518,8 +508,8 @@ const MysteryBox = () => {
                             <div className="w-96 h-96 border-8 border-t-yellow-400 border-r-pink-400 border-b-purple-400 border-l-blue-400 rounded-full animate-spin" />
                         </div>
                     )}
-                </div>      
-                          {/* Action Buttons */}
+                </div>
+                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 items-center">
                     {showReward && !showShareSuccess && (
                         <button
@@ -543,7 +533,7 @@ const MysteryBox = () => {
                         <div className="flex flex-col items-center bg-white/20 backdrop-blur-lg rounded-xl p-6 border-2 border-white/30">
                             <h3 className="text-xl font-bold text-white mb-4">🎉 Successfully Claimed {reward.toFixed(2)} cUSD! 🎉</h3>
                             <p className="text-white mb-4">Share your win with friends and invite them to try their luck!</p>
-                            <ShareOnFarcasterButton amount={reward}  />
+                            <ShareOnFarcasterButton amount={reward} />
                             <button
                                 onClick={() => {
                                     setShowReward(false);

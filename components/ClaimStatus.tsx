@@ -36,7 +36,7 @@ export default function ClaimStatusDisplay({
                 </p>
                 <div className="w-24 h-1 mx-auto bg-gradient-to-r from-blue-500 to-teal-400 rounded-full my-3"></div>
                 <p className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 dark:from-blue-400 dark:to-teal-300 px-4 py-2 rounded-lg text-white dark:text-gray-900 font-medium inline-block">
-                    You have already claimed your free bundle for today
+                    You have already opened a Mystery Box today.
                 </p>
             </div>
         );
