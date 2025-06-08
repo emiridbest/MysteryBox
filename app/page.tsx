@@ -559,7 +559,7 @@ const MysteryBox = () => {
                         </p>
                         <div className="mt-6 flex justify-center items-center space-x-4">
                             <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 rounded-full">
-                                <span className="text-white font-bold">💰 Faucet Balance: {faucetBalance} CeloUSD</span>
+                                <span className="text-white font-bold">💰 Faucet Balance: *.** CeloUSD</span>
                             </div>
                         </div>
                     </div>
