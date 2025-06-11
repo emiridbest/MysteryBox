@@ -11,7 +11,7 @@
         "homeUrl": "https://celomysterybox.vercel.app",
         "splashImageUrl": "https://celomysterybox.vercel.app/mystery-box-og.png",
         "splashBackgroundColor": "#f5f0ec",
-        "webhookUrl": "https://celomysterybox.vercel.app/api/farcaster/webhook",
+        "webhookUrl": "https://api.neynar.com/f/app/9b0eeef4-765a-467d-b78c-8a6590e4d99d/event",
         "subtitle": "Win cUSD daily",
         "description": "Win cUSD daily by opening the mystery box on Celo blockchain",
         "primaryCategory": "social",
