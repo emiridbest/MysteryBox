@@ -210,12 +210,10 @@ const MysteryBox = () => {
             // Generate a random reward between 1% and 20% of faucet balance
             let maxPercent;
             const minPercent = 1;
-            if (faucetBalance <= 5) {
-                maxPercent = 5;
-            } else if (faucetBalance <= 10) {
-                maxPercent = 10;
-            } else {
+            if (faucetBalance <= 2) {
                 maxPercent = 20;
+            } else {
+                maxPercent = 10;
             }
             const randomPercent = minPercent + Math.random() * (maxPercent - minPercent);
             const calculatedReward = (faucetBalance * randomPercent) / 100;
@@ -554,7 +552,7 @@ const MysteryBox = () => {
                     )}
                 </div>
 
-                {/* Info Section */}
+              {/* Info Section */}
                 <div className="mt-12 text-center max-w-2xl">
                     <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 border-2 border-white/30 shadow-2xl">
                         <h3 className="text-2xl font-bold text-white mb-4">🌈 How It Works 🌈</h3>
@@ -562,7 +560,11 @@ const MysteryBox = () => {
                             Open the magical mystery box to win amazing cUSD tokens!
                             You could win anywhere between <span className="font-bold text-yellow-300">1%</span> and <span className="font-bold text-green-300">20%</span> of the faucet balance.
                         </p>
-                       
+                        <div className="mt-6 flex justify-center items-center space-x-4">
+                            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 rounded-full">
+                                <span className="text-white font-bold">💰 Faucet Balance: {faucetBalance} CeloUSD</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
