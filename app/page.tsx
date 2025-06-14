@@ -565,6 +565,10 @@ const MysteryBox = () => {
                                 <span className="text-white font-bold">💰 Faucet Balance: {faucetBalance} CeloUSD</span>
                             </div>
                         </div>
+                        {/* pro tip to add notification to know next faucet replenishmemnt*/}
+                        <div className="mt-6 text-sm text-gray-300">
+                            <p>Pro Tip: The faucet balance is replenished twice daily. Turn on notifications to know first when faucet is replenished!</p>
+                        </div>
                     </div>
                 </div>
 
