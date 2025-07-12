@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Gift, Sparkles, Star, Heart, Diamond, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ethers, formatUnits, Interface, parseUnits } from 'ethers';
+import { ethers } from 'ethers';
 import { useAccount, useSendTransaction, useSwitchChain, useChainId } from 'wagmi';
 import { readContract, writeContract } from '@wagmi/core';
 import { parseEther } from 'viem';
@@ -156,7 +156,7 @@ const MysteryBox = () => {
                     args: []
                 });
 
-                setFaucetBalance(Number(formatUnits(balance.toString())));
+                setFaucetBalance(Number(ethers.utils.formatUnits(balance.toString())));
             } catch (err) {
                 console.error("Failed to fetch faucet balance:", err);
                 toast.error("Failed to fetch faucet balance");
