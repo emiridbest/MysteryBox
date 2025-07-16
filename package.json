@@ -14,7 +14,7 @@
   "dependencies": {
     "@celo/abis": "^12.0.3",
     "@celo/rainbowkit-celo": "^1.0.2",
-    "@divvi/referral-sdk": "^1.0.0",
+    "@divvi/referral-sdk": "^2.2.0",
     "@etherspot/modular-sdk": "^6.1.0",
     "@etherspot/prime-sdk": "^1.9.2",
     "@farcaster/auth-client": "^0.6.0",

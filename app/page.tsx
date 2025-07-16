@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { Gift, Sparkles, Star, Heart, Diamond, Share2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ethers } from 'ethers';
 import { useAccount, useSendTransaction, useSwitchChain, useChainId } from 'wagmi';
@@ -12,7 +11,7 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
 import { mysteryBoxContractAddress, mysteryBoxABI } from "../utils/abi";
-import { getDataSuffix, submitReferral } from '@divvi/referral-sdk'
+import { getReferralTag, submitReferral } from '@divvi/referral-sdk'
 import { TransactionSteps, Step, StepStatus } from '../components/TransactionSteps';
 import ClaimStatusDisplay from '../components/ClaimStatus';
 import ShareOnFarcasterButton from '../components/ShareOnFarcasterButton';
@@ -27,11 +26,7 @@ import {
 import { Celo } from '@celo/rainbowkit-celo/chains';
 
 
-// Divvi Integration 
-const dataSuffix = getDataSuffix({
-  consumer: '0xb82896C4F251ed65186b416dbDb6f6192DFAF926',
-  providers: ['0x0423189886d7966f0dd7e7d256898daeee625dca','0xc95876688026be9d6fa7a7c33328bd013effa2bb','0x7beb0e14f8d2e6f6678cc30d867787b384b19e20'],
-})
+
 const MysteryBox = () => {
     const [isSpinning, setIsSpinning] = useState(false);
     const [showReward, setShowReward] = useState(false);
@@ -63,65 +58,65 @@ const MysteryBox = () => {
         isPending: isSwitchChainPending,
     } = useSwitchChain();
 
-   useEffect(() => {
-    const checkLastClaim = async () => {
-        if (!address || !mysteryBoxContractAddress) {
-            // Allow claiming if no address or contract
-            setCanClaim(true);
-            setCanClaimToday(true);
-            return true;
-        }
+    useEffect(() => {
+        const checkLastClaim = async () => {
+            if (!address || !mysteryBoxContractAddress) {
+                // Allow claiming if no address or contract
+                setCanClaim(true);
+                setCanClaimToday(true);
+                return true;
+            }
 
-        try {
-            const lastClaimTime = await readContract(config, {
-                address: mysteryBoxContractAddress as `0x${string}`,
-                abi: mysteryBoxABI,
-                functionName: 'lastClaimTime',
-                args: [address as `0x${string}`]
-            });
+            try {
+                const lastClaimTime = await readContract(config, {
+                    address: mysteryBoxContractAddress as `0x${string}`,
+                    abi: mysteryBoxABI,
+                    functionName: 'lastClaimTime',
+                    args: [address as `0x${string}`]
+                });
 
-            if (lastClaimTime && Number(lastClaimTime) > 0) {
-                // Convert blockchain timestamp (seconds since epoch) to Date object
-                const lastClaimDate = new Date(Number(lastClaimTime) * 1000);
-                setLastClaimTime(lastClaimDate);
+                if (lastClaimTime && Number(lastClaimTime) > 0) {
+                    // Convert blockchain timestamp (seconds since epoch) to Date object
+                    const lastClaimDate = new Date(Number(lastClaimTime) * 1000);
+                    setLastClaimTime(lastClaimDate);
 
-                // Calculate next claim time (24 hours from last claim)
-                const nextClaimDate = new Date(lastClaimDate.getTime() + 86400 * 1000);
-                setNextClaimTime(nextClaimDate);
+                    // Calculate next claim time (24 hours from last claim)
+                    const nextClaimDate = new Date(lastClaimDate.getTime() + 86400 * 1000);
+                    setNextClaimTime(nextClaimDate);
 
-                // Check if user can claim now
-                const now = new Date();
-                const canClaimNow = now.getTime() >= nextClaimDate.getTime();
-                
-                setCanClaim(canClaimNow);
-                setCanClaimToday(canClaimNow);
-                
-                return canClaimNow;
-            } else {
-                // No previous claim found, allow claiming
+                    // Check if user can claim now
+                    const now = new Date();
+                    const canClaimNow = now.getTime() >= nextClaimDate.getTime();
+
+                    setCanClaim(canClaimNow);
+                    setCanClaimToday(canClaimNow);
+
+                    return canClaimNow;
+                } else {
+                    // No previous claim found, allow claiming
+                    setCanClaim(true);
+                    setCanClaimToday(true);
+                    setLastClaimTime(null);
+                    setNextClaimTime(null);
+                    return true;
+                }
+            } catch (err) {
+                console.error("Failed to check last claim time:", err);
+                // Default to allowing claim on error
                 setCanClaim(true);
                 setCanClaimToday(true);
                 setLastClaimTime(null);
                 setNextClaimTime(null);
                 return true;
             }
-        } catch (err) {
-            console.error("Failed to check last claim time:", err);
-            // Default to allowing claim on error
-            setCanClaim(true);
-            setCanClaimToday(true);
-            setLastClaimTime(null);
-            setNextClaimTime(null);
-            return true;
-        }
-    };
+        };
 
-    checkLastClaim();
-}, [address, mysteryBoxContractAddress]); // Add mysteryBoxContractAddress to dependencies
+        checkLastClaim();
+    }, [address, mysteryBoxContractAddress]); // Add mysteryBoxContractAddress to dependencies
 
     // Update time remaining countdown
     useEffect(() => {
-        if (!canClaim && nextClaimTime ) {
+        if (!canClaim && nextClaimTime) {
             const interval = setInterval(() => {
                 const now = new Date();
                 const diff = nextClaimTime.getTime() - now.getTime();
@@ -260,7 +255,10 @@ const MysteryBox = () => {
             updateStepStatus('request-claim', 'loading');
 
             await new Promise(resolve => setTimeout(resolve, 1000));
-
+            const dataSuffix = getReferralTag({
+                user: address,
+                consumer: '0xb82896C4F251ed65186b416dbDb6f6192DFAF926',
+            })
             // Step 4: Confirm transaction
             const tx = await writeContract(config, {
                 abi: mysteryBoxABI,
@@ -552,7 +550,7 @@ const MysteryBox = () => {
                     )}
                 </div>
 
-              {/* Info Section */}
+                {/* Info Section */}
                 <div className="mt-12 text-center max-w-2xl">
                     <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 border-2 border-white/30 shadow-2xl">
                         <h3 className="text-2xl font-bold text-white mb-4">🌈 How It Works 🌈</h3>
