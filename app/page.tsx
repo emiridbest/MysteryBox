@@ -147,7 +147,7 @@ const MysteryBox = () => {
                 const balance = await readContract(config, {
                     address: mysteryBoxContractAddress as `0x${string}`,
                     abi: mysteryBoxABI,
-                    functionName: 'getFaucetBalance',
+                    functionName: 'getBalance',
                     args: []
                 });
 
