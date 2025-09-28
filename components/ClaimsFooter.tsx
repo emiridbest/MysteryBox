@@ -135,7 +135,7 @@ export default function EnhancedClaimsFooter() {
                         const amount = (log.args.amount?.toString() || "0") as string;
 
                         recentClaimData.push({
-                            claimer: (log.args.claimer as string) || "",
+                            claimer: (log.args.user as string) || "",
                             amount: formatEther(BigInt(amount)),
                             timestamp: block.timestamp.toString(),
                             transactionHash: log.transactionHash,
