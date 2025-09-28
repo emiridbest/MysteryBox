@@ -119,7 +119,7 @@ export default function EnhancedClaimsFooter() {
                         type: 'event',
                         name: 'TokensRequested',
                         inputs: [
-                            { type: 'address', name: 'claimer', indexed: true },
+                            { type: 'address', name: 'user', indexed: true },
                             { type: 'uint256', name: 'amount' }
                         ]
                     },
