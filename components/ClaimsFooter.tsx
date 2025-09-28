@@ -7,7 +7,7 @@ import { Clock, Award, ChevronDown, ChevronUp, ExternalLink, User, TrendingUp, C
 import { mysteryBoxContractAddress, mysteryBoxABI } from "../utils/abi";
 
 interface Claim {
-    claimer: string;
+    user: string;
     amount: string;
     timestamp: string;
     transactionHash: string;
@@ -59,7 +59,7 @@ export default function EnhancedClaimsFooter() {
     const userClaims = useMemo(() => {
         if (!address) return [];
         return allClaims.filter(claim =>
-            claim.claimer.toLowerCase() === address.toLowerCase()
+            claim.user.toLowerCase() === address.toLowerCase()
         );
     }, [allClaims, address]);
 
@@ -117,9 +117,9 @@ export default function EnhancedClaimsFooter() {
                     address: contractAddress,
                     event: {
                         type: 'event',
-                        name: 'RewardClaimed',
+                        name: 'TokensRequested',
                         inputs: [
-                            { type: 'address', name: 'claimer', indexed: true },
+                            { type: 'address', name: 'user', indexed: true },
                             { type: 'uint256', name: 'amount' }
                         ]
                     },
@@ -135,7 +135,7 @@ export default function EnhancedClaimsFooter() {
                         const amount = (log.args.amount?.toString() || "0") as string;
 
                         recentClaimData.push({
-                            claimer: (log.args.claimer as string) || "",
+                            user: (log.args.user as string) || "",
                             amount: formatEther(BigInt(amount)),
                             timestamp: block.timestamp.toString(),
                             transactionHash: log.transactionHash,
@@ -164,7 +164,7 @@ export default function EnhancedClaimsFooter() {
                             type: 'event',
                             name: 'RewardClaimed',
                             inputs: [
-                                { type: 'address', name: 'claimer', indexed: true },
+                                { type: 'address', name: 'user', indexed: true },
                                 { type: 'uint256', name: 'amount' }
                             ]
                         },
@@ -180,7 +180,7 @@ export default function EnhancedClaimsFooter() {
                             const amount = (log.args.amount?.toString() || "0") as string;
 
                             allClaimData.push({
-                                claimer: (log.args.claimer as string) || "",
+                                user: (log.args.user as string) || "",
                                 amount: formatEther(BigInt(amount)),
                                 timestamp: block.timestamp.toString(),
                                 transactionHash: log.transactionHash,
@@ -228,18 +228,18 @@ export default function EnhancedClaimsFooter() {
                                         ? "bg-gradient-to-br from-blue-300 to-blue-500"
                                         : "bg-gradient-to-br from-purple-300 to-purple-500"
                                 }`}>
-                                {address && claim.claimer.toLowerCase() === address.toLowerCase() && (
+                                {address && claim.user.toLowerCase() === address.toLowerCase() && (
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border border-white"></div>
                                 )}
                                 <span className="font-bold text-xs">
-                                    {address && claim.claimer.toLowerCase() === address.toLowerCase() ? '👤' :
+                                    {address && claim.user.toLowerCase() === address.toLowerCase() ? '👤' :
                                         parseFloat(claim.amount) >= 10 ? '🏆' : parseFloat(claim.amount) >= 5 ? '🥈' : '🥉'}
                                 </span>
                             </div>
                             <div>
                                 <p className="font-medium flex items-center gap-1">
-                                    {truncateAddress(claim.claimer)}
-                                    {address && claim.claimer.toLowerCase() === address.toLowerCase() &&
+                                    {truncateAddress(claim.user)}
+                                    {address && claim.user.toLowerCase() === address.toLowerCase() &&
                                         <span className="text-green-300 text-xs font-semibold">(You)</span>}
                                 </p>
                                 <div className="flex items-center gap-1 text-xs text-white/70">
