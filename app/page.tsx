@@ -71,8 +71,9 @@ const MysteryBox = () => {
                 const lastClaimTime = await readContract(config, {
                     address: mysteryBoxContractAddress as `0x${string}`,
                     abi: mysteryBoxABI,
-                    functionName: 'lastClaimTime',
-                    args: [address as `0x${string}`]
+                    functionName: 'getRemainingCooldown',
+                    args: [address as `0x${string}`],
+                    authorizationList: undefined
                 });
 
                 if (lastClaimTime && Number(lastClaimTime) > 0) {
@@ -148,7 +149,8 @@ const MysteryBox = () => {
                     address: mysteryBoxContractAddress as `0x${string}`,
                     abi: mysteryBoxABI,
                     functionName: 'getBalance',
-                    args: []
+                    args: [],
+                    authorizationList: undefined
                 });
 
                 setFaucetBalance(Number(ethers.utils.formatUnits(balance.toString())));
@@ -266,7 +268,8 @@ const MysteryBox = () => {
                 functionName: 'claim',
                 args: [claim],
                 account: address as `0x${string}`,
-                dataSuffix: dataSuffix
+                dataSuffix: dataSuffix as `0x${string}`,
+                chain: Celo
             });
 
 

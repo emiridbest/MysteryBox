@@ -162,7 +162,7 @@ export default function EnhancedClaimsFooter() {
                         address: contractAddress,
                         event: {
                             type: 'event',
-                            name: 'RewardClaimed',
+                            name: 'TokensRequested',
                             inputs: [
                                 { type: 'address', name: 'user', indexed: true },
                                 { type: 'uint256', name: 'amount' }

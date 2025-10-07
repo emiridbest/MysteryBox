@@ -10,7 +10,13 @@ import { FrameContext } from "@farcaster/frame-node";
 import sdk, {AddFrame} from "@farcaster/frame-sdk";
 
 const WagmiProvider = dynamic(
-  () => import("../components/providers/WagmiProvider"),
+  () => import("../components/providers/WagmiProvider").then(mod => ({
+    default: ({ children }: { children: React.ReactNode }) => (
+      <mod.WagmiContext cookies={null}>
+        {children}
+      </mod.WagmiContext>
+    )
+  })),
   {
     ssr: false,
   }
